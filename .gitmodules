@@ -1,4 +1,0 @@
-[submodule "submodules/HISIM"]
-	path = submodules/HISIM
-	url = https://github.com/mec-UMN/HISIM.git
-	branch = main
