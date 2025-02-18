@@ -6,8 +6,6 @@ from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.optimize import minimize
 from pymoo.visualization.scatter import Scatter
 
-from interactive_plot import PlotLauncher
-
 # Problem definition based on the following, from submodules/HISIM/HISIM-IMC/run.py mode 1
 
     # crossbar_size=[1024] 
@@ -99,9 +97,7 @@ class MyProblem(ElementwiseProblem):
             out["F"] = [area, networkLatency]
             print("Output Numbers: ", out["F"])
 
-compute_ga = False
-
-if compute_ga:
+if __name__ == "__main__":
     problem = MyProblem()
 
     algorithm = NSGA2(pop_size=10)
@@ -114,14 +110,4 @@ if compute_ga:
     plot = Scatter()
     plot.add(res.F, color="red")
     plot.save("Results/output.png")
-
-# Get data from csv
-df = pd.read_csv('Results/PPA.csv')
-
-# Erase placement method column
-df = df.drop(columns=['placement_method'])
-
-# Create plot
-plot = PlotLauncher(df, "chip area (mm2)", "network_latency (ns)", ["3d NoC latency (ns)", "W3d"], "chip_Architecture", "W3d")
-plot.run()
 
