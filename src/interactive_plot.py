@@ -1,13 +1,16 @@
 import dash
+import dash_bootstrap_components as dbc
 from dash import dcc, html, State
 from dash.dependencies import Input, Output
 import pandas as pd
 import plotly.express as px
 import os
+import threading
+import subprocess
 
 class PlotLauncher:
     def __init__(self, file_path: str, x_axis: str, y_axis: str, sld_feat: list, color_feat: str, size_feat: str):
-        self.app = dash.Dash("Dash app")
+        self.app = dash.Dash("Dash app", external_stylesheets=[dbc.themes.BOOTSTRAP])
         self.file_path = file_path
         self.x_axis = x_axis
         self.y_axis = y_axis
@@ -86,15 +89,47 @@ class PlotLauncher:
                     },
                 ),
 
-                html.Div([
-                    "N_stack: ",
-                    dcc.Input(id="input-1", type="number"),
-                ]),
-                html.Div([
-                    "tsv_pitch: ",
-                    dcc.Input(id="input-2", type="number"),
-                ]),
-                html.Button(id='submit-button-state', n_clicks=0, children='Submit'),
+                html.Div(
+                    [
+                        # First Input (N_stack)
+                        dbc.Row(
+                            [
+                                dbc.Col(html.Label("N_stack:", style={"fontSize": "18px", "fontWeight": "bold"}), width=2),
+                                dbc.Col(dbc.Input(id="input-1", type="number", placeholder="Enter N_stack"), width=4),
+                            ],
+                            className="mb-3",
+                        ),
+
+                        # Second Input (tsv_pitch)
+                        dbc.Row(
+                            [
+                                dbc.Col(html.Label("TSV Pitch:", style={"fontSize": "18px", "fontWeight": "bold"}), width=2),
+                                dbc.Col(dbc.Input(id="input-2", type="number", placeholder="Enter TSV pitch"), width=4),
+                            ],
+                            className="mb-3",
+                        ),
+
+                        # Submit Button
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    dbc.Button("Submit", id="submit-button-state", n_clicks=0, color="primary", className="btn-lg"),
+                                    width={"size": 3, "offset": 2},  # Centering the button
+                                ),
+                            ],
+                            className="mt-3",
+                        ),
+                    ],
+                    style={
+                        "border": "2px solid #ddd",
+                        "borderRadius": "10px",
+                        "padding": "20px",
+                        "boxShadow": "2px 2px 10px rgba(0, 0, 0, 0.1)",
+                        "width": "50%",
+                        "margin": "auto",
+                        "backgroundColor": "#f8f9fa",
+                    },
+                ),
                 html.Div(id="number-output"),
 
             ],
@@ -153,51 +188,10 @@ class PlotLauncher:
               State('input-2', 'value'))
         def update_output(n_clicks, input1, input2):
             if n_clicks == 0:
-                return ''
-            N_stack = input1
-            tsv_pitch = input2
-            crossbar_size = 1024
-            N_tile = 36
-            N_tier = 3
-            N_pe = 1
-            f_core = 1
-            f_noc = 5
-            place_method = 2
-            route_method = 1
-            percent_router = 1
-            W2d = 32
-            router_times_scale = 1
-            ai_model = 'densenet121'
-            chip_arch = 'M3D'
-            os.system('python submodules/HISIM/HISIM-IMC/analy_model.py --xbar_size %d \
-                --N_stack %d\
-                --N_tile %d \
-                --N_tier %d \
-                --N_pe %d \
-                --freq_computing %f \
-                --fclk_noc %f \
-                --placement_method %d \
-                --routing_method %d\
-                --percent_router %f\
-                --tsvPitch %f \
-                --chip_architect %s\
-                --W2d %d\
-                --router_times_scale %d\
-                --ai_model %s ' %(int(crossbar_size), int(N_stack), int(N_tile),int(N_tier),int(N_pe),float(f_core),float(f_noc),float(place_method),float(route_method),float(percent_router),float(tsv_pitch), str(chip_arch), int(W2d), int(router_times_scale), str(ai_model)))
-                # Read the output from the file
-            with open('Results/PPA.csv', 'r') as file:
-                data = file.readlines()
-                last_line = data[-1].strip().split(',')
-                # power = float(last_line[11])/float(last_line[10])*pow(10,-3) # watts I think
-                # print("Power: ", power)
-                area = float(last_line[13]) # mm^2
-                networkLatency = float(last_line[18]) # ns
-                print("Area: ", area)
-                print("Network Latency: ", networkLatency)
-            return f'''
-                Area: {area:.2f},\n
-                Network Latency: {networkLatency:.2f}
-            '''
+                return ""
+            threading.Thread(target=self.run_hisim_analysis, args=(input1, input2)).start()
+
+            return "Processing... Results will be updated soon!"
 
     def load_data(self):
         """Loads the latest data from CSV."""
@@ -207,6 +201,35 @@ class PlotLauncher:
         except Exception as e:
             print(f"Error loading data: {e}")
             return self.df  # Return last known dataframe if error occurs
+        
+    def run_hisim_analysis(self, N_stack, tsv_pitch):
+        """Runs the external analysis asynchronously."""
+        crossbar_size = 1024
+        N_tile = 36
+        N_tier = 3
+        N_pe = 1
+        f_core = 1
+        f_noc = 5
+        place_method = 2
+        route_method = 1
+        percent_router = 1
+        W2d = 32
+        router_times_scale = 1
+        ai_model = "densenet121"
+        chip_arch = "M3D"
+
+        cmd = f"python submodules/HISIM/HISIM-IMC/analy_model.py --xbar_size {crossbar_size} \
+            --N_stack {N_stack} --N_tile {N_tile} --N_tier {N_tier} --N_pe {N_pe} \
+            --freq_computing {f_core} --fclk_noc {f_noc} --placement_method {place_method} \
+            --routing_method {route_method} --percent_router {percent_router} \
+            --tsvPitch {tsv_pitch} --chip_architect {chip_arch} --W2d {W2d} \
+            --router_times_scale {router_times_scale} --ai_model {ai_model}"
+
+        # Run in a separate thread (non-blocking)
+        subprocess.Popen(cmd, shell=True)
+
+        # Update the DataFrame with the new results
+        self.df = self.load_data()
 
     def run(self):
         """Runs the Dash app."""
