@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import sys
 from pymoo.core.problem import ElementwiseProblem
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.optimize import minimize
@@ -20,7 +21,7 @@ from pymoo.visualization.scatter import Scatter
     # percent_router=[1]
     # tsv_pitch=[2,3,4,5,10,20] # um
     # W2d=[32]
-    # ai_model=['densenet121']
+    # ai_model=["densenet121"]
     # chip_arch=["M3D"]
     # N_stack=[1]
 
@@ -65,10 +66,10 @@ class MyProblem(ElementwiseProblem):
 
     def _evaluate(self, x, out, *args, **kwargs):
         crossbar_size, N_stack, N_tile, N_tier, N_pe, f_core, f_noc, place_method, route_method, percent_router, tsv_pitch, W2d, router_times_scale = x
-        ai_model = 'densenet121'
-        chip_arch = 'M3D'
+        ai_model = "densenet121"
+        chip_arch = "M3D"
 
-        os.system('python submodules/HISIM/HISIM-IMC/analy_model.py --xbar_size %d \
+        os.system(f"{sys.executable} submodules/HISIM/HISIM-IMC/analy_model.py --xbar_size %d \
             --N_stack %d\
             --N_tile %d \
             --N_tier %d \
@@ -82,12 +83,12 @@ class MyProblem(ElementwiseProblem):
             --chip_architect %s\
             --W2d %d\
             --router_times_scale %d\
-            --ai_model %s ' %(int(crossbar_size), int(N_stack), int(N_tile),int(N_tier),int(N_pe),float(f_core),float(f_noc),float(place_method),float(route_method),float(percent_router),float(tsv_pitch), str(chip_arch), int(W2d),int(router_times_scale), str(ai_model)))
+            --ai_model %s " %(int(crossbar_size), int(N_stack), int(N_tile),int(N_tier),int(N_pe),float(f_core),float(f_noc),float(place_method),float(route_method),float(percent_router),float(tsv_pitch), str(chip_arch), int(W2d),int(router_times_scale), str(ai_model)))
         
         # Read the output from the file
-        with open('Results/PPA.csv', 'r') as file:
+        with open("Results/PPA.csv", "r") as file:
             data = file.readlines()
-            last_line = data[-1].strip().split(',')
+            last_line = data[-1].strip().split(",")
             # power = float(last_line[11])/float(last_line[10])*pow(10,-3) # watts I think
             # print("Power: ", power)
             area = float(last_line[13]) # mm^2
@@ -110,4 +111,3 @@ if __name__ == "__main__":
     plot = Scatter()
     plot.add(res.F, color="red")
     plot.save("Results/output.png")
-

@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "GA Background",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/GAPrototype.py",
+            "console": "integratedTerminal",
+            "python": "/path/to/env/bin/python"
+        },
+        {
+            "name": "Interactive Plot",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/InteractivePlot.py",
+            "console": "integratedTerminal",
+            "python": "/path/to/env/bin/python"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Start",
+            "configurations": ["GA Background", "Interactive Plot"]
+        }
+    ]
+}

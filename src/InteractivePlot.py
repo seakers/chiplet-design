@@ -5,6 +5,7 @@ from dash.dependencies import Input, Output
 import pandas as pd
 import plotly.express as px
 import os
+import sys
 import threading
 import subprocess
 
@@ -218,7 +219,7 @@ class PlotLauncher:
         ai_model = "densenet121"
         chip_arch = "M3D"
 
-        cmd = f"python submodules/HISIM/HISIM-IMC/analy_model.py --xbar_size {crossbar_size} \
+        cmd = f"{sys.executable} submodules/HISIM/HISIM-IMC/analy_model.py --xbar_size {crossbar_size} \
             --N_stack {N_stack} --N_tile {N_tile} --N_tier {N_tier} --N_pe {N_pe} \
             --freq_computing {f_core} --fclk_noc {f_noc} --placement_method {place_method} \
             --routing_method {route_method} --percent_router {percent_router} \
